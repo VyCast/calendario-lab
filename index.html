@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda de Conciliación</title>
+    
+    <!-- Configuración para modo App Nativa -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Icono dinámico generado (Letra C con fondo verde) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234caf50'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='65' fill='%23ffffff'>C</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234caf50'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='65' fill='%23ffffff'>C</text></svg>">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #bb86fc;
+            --border-color: #333;
+            --vacaciones-color: #03dac6;
+            --tt-color: #cf6679;
+            --off-color: #ffb74d;
+            --pink-bg: rgba(236, 64, 122, 0.25);
+            --pink-border: #ec407a;
+            --green-bg: rgba(76, 175, 80, 0.25);
+            --green-border: #4caf50;
+            --other-month: #555;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            margin: 0;
+            text-transform: capitalize;
+            color: var(--accent-color);
+        }
+
+        .nav-btn {
+            background: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .nav-btn:active {
+            background: #3a3a3a;
+        }
+
+        .calendar-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .day-cell {
+            background: #2a2a2a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            min-height: 80px;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .day-cell.other-month {
+            background: #191919;
+            opacity: 0.6;
+        }
+
+        .day-cell.pink-highlight {
+            background: var(--pink-bg);
+            border-color: var(--pink-border);
+        }
+
+        .day-cell.green-highlight {
+            background: var(--green-bg);
+            border-color: var(--green-border);
+        }
+
+        .day-number {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #aaa;
+        }
+
+        .day-cell.other-month .day-number {
+            color: var(--other-month);
+        }
+
+        .day-input {
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-size: 0.7rem;
+            width: 100%;
+            text-align: center;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+            height: 52px;
+            line-height: 1.2;
+        }
+
+        .day-input.auto-vacaciones {
+            color: var(--vacaciones-color);
+            font-weight: bold;
+        }
+
+        .day-input.auto-tt {
+            color: var(--tt-color);
+            font-weight: bold;
+        }
+
+        .day-input.auto-off {
+            color: var(--off-color);
+            font-weight: bold;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 12px;
+            text-align: center;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-nav">
+        <button class="nav-btn" id="prev-month">&#10094; Mes</button>
+        <h1 id="month-year-display"></h1>
+        <button class="nav-btn" id="next-month">Mes &#10095;</button>
+    </div>
+
+    <div class="calendar-container" id="swipe-area">
+        <div class="weekdays">
+            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+        </div>
+        <div class="days-grid" id="calendar-grid"></div>
+    </div>
+
+    <div class="hint">
+        Desliza horizontalmente o usa los botones para cambiar de mes.<br>
+        Escribe "D." para fondo rosa | Escribe "tarde" para fondo verde
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        let agendaData = JSON.parse(localStorage.getItem('agenda_conciliacion')) || {};
+        let autoLinks = JSON.parse(localStorage.getItem('agenda_autolinks')) || {};
+        let manualOverrides = JSON.parse(localStorage.getItem('agenda_overrides')) || {};
+
+        const gridEl = document.getElementById('calendar-grid');
+        const titleEl = document.getElementById('month-year-display');
+        const swipeArea = document.getElementById('swipe-area');
+
+        const monthsNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        function renderCalendar() {
+            gridEl.innerHTML = '';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            titleEl.textContent = `${monthsNames[month]} ${year}`;
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            let firstDayIndex = firstDayOfMonth.getDay();
+            firstDayIndex = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
+
+            const totalDaysCurrentMonth = new Date(year, month + 1, 0).getDate();
+            const totalDaysPrevMonth = new Date(year, month, 0).getDate();
+
+            let cellsToRender = [];
+
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                let dayNum = totalDaysPrevMonth - i;
+                let prevMonth = month - 1;
+                let prevYear = year;
+                if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+                cellsToRender.push({ year: prevYear, month: prevMonth, day: dayNum, isCurrentMonth: false });
+            }
+
+            for (let day = 1; day <= totalDaysCurrentMonth; day++) {
+                cellsToRender.push({ year: year, month: month, day: day, isCurrentMonth: true });
+            }
+
+            let remainingCells = 7 - (cellsToRender.length % 7);
+            if (remainingCells < 7) {
+                for (let day = 1; day <= remainingCells; day++) {
+                    let nextMonth = month + 1;
+                    let nextYear = year;
+                    if (nextMonth > 11) { nextMonth = 0; nextYear++; }
+                    cellsToRender.push({ year: nextYear, month: nextMonth, day: day, isCurrentMonth: false });
+                }
+            }
+
+            cellsToRender.forEach(cellInfo => {
+                const cell = document.createElement('div');
+                cell.className = 'day-cell' + (cellInfo.isCurrentMonth ? '' : ' other-month');
+
+                const numSpan = document.createElement('span');
+                numSpan.className = 'day-number';
+                numSpan.textContent = cellInfo.day;
+                cell.appendChild(numSpan);
+
+                const input = document.createElement('textarea');
+                input.className = 'day-input';
+                
+                const dateKey = `${cellInfo.year}-${cellInfo.month}-${cellInfo.day}`;
+
+                if (agendaData[dateKey] === undefined) {
+                    agendaData[dateKey] = "";
+                }
+
+                input.value = agendaData[dateKey];
+                updateCellAppearance(cell, input);
+
+                input.addEventListener('input', (e) => {
+                    const newVal = e.target.value;
+                    const oldVal = agendaData[dateKey] || '';
+
+                    agendaData[dateKey] = newVal;
+                    
+                    if (newVal.trim() === '') {
+                        manualOverrides[dateKey] = true;
+                    } else if (oldVal.trim().toLowerCase().includes('off') && !newVal.trim().toLowerCase().includes('off')) {
+                        clearAutomaticLinks(dateKey);
+                    } else {
+                        if (autoLinks[dateKey]) {
+                            delete autoLinks[dateKey];
+                        }
+                    }
+
+                    localStorage.setItem('agenda_conciliacion', JSON.stringify(agendaData));
+                    localStorage.setItem('agenda_autolinks', JSON.stringify(autoLinks));
+                    localStorage.setItem('agenda_overrides', JSON.stringify(manualOverrides));
+
+                    updateCellAppearance(cell, e.target);
+                });
+
+                input.addEventListener('change', () => {
+                    processRulesForWeek(cellInfo.year, cellInfo.month, cellInfo.day);
+                });
+
+                cell.appendChild(input);
+                gridEl.appendChild(cell);
+            });
+        }
+
+        function updateCellAppearance(cell, input) {
+            const val = input.value.trim().toLowerCase();
+            const rawVal = input.value.trim();
+
+            input.classList.remove('auto-vacaciones', 'auto-tt', 'auto-off');
+            cell.classList.remove('pink-highlight', 'green-highlight');
+
+            if (val === 'vacaciones') input.classList.add('auto-vacaciones');
+            else if (val === 'tt') input.classList.add('auto-tt');
+            else if (val.includes('off')) input.classList.add('auto-off');
+
+            // Aplicar fondo verde si contiene la palabra "tarde"
+            if (val.includes('tarde')) {
+                cell.classList.add('green-highlight');
+            } 
+            // Aplicar fondo rosa si el texto es exactamente "d."
+            else if (rawVal === 'D.') {
+                cell.classList.add('pink-highlight');
+            }
+        }
+
+        function processRulesForWeek(year, month, dayChanged) {
+            const date = new Date(year, month, dayChanged);
+            const dayOfWeek = date.getDay();
+            
+            const distanceToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+            const monday = new Date(year, month, date.getDate() + distanceToMonday);
+
+            let weekDays = [];
+            for (let i = 0; i < 7; i++) {
+                let d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+                let key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                weekDays.push({ key: key, date: d, text: (agendaData[key] || '').trim().toLowerCase() });
+            }
+
+            let offIndices = [];
+            weekDays.forEach((wd, index) => {
+                if (wd.text.includes('off')) {
+                    offIndices.push(index);
+                }
+            });
+
+            weekDays.forEach(wd => {
+                removeAutoGeneratedIfUnused(wd.key);
+            });
+
+            let isSatOff = weekDays[5].text.includes('off');
+            let isSunOff = weekDays[6].text.includes('off');
+
+            if (isSatOff && isSunOff) {
+                applyAutomaticRule(weekDays[2].key, 'vacaciones', [weekDays[5].key, weekDays[6].key]);
+                applyAutomaticRule(weekDays[3].key, 'TT', [weekDays[5].key, weekDays[6].key]);
+            } else if (offIndices.length > 0) {
+                let firstOffIndex = offIndices[0];
+                let secondOffIndex = offIndices.length > 1 ? offIndices[1] : firstOffIndex;
+
+                let targetVacacionesIndex = firstOffIndex - 1;
+                let targetTtIndex = secondOffIndex + 1;
+
+                if (firstOffIndex === 5 && !isSunOff) {
+                    targetVacacionesIndex = -1;
+                }
+
+                let triggerKeys = offIndices.map(idx => weekDays[idx].key);
+
+                if (targetVacacionesIndex >= 0) {
+                    applyAutomaticRule(weekDays[targetVacacionesIndex].key, 'vacaciones', triggerKeys);
+                }
+                if (targetTtIndex <= 6) {
+                    applyAutomaticRule(weekDays[targetTtIndex].key, 'TT', triggerKeys);
+                }
+            }
+
+            renderCalendar();
+        }
+
+        function applyAutomaticRule(key, value, triggerKeys) {
+            let currentVal = (agendaData[key] || '').trim();
+            if (!currentVal && !manualOverrides[key]) {
+                agendaData[key] = value;
+                autoLinks[key] = triggerKeys;
+                localStorage.setItem('agenda_conciliacion', JSON.stringify(agendaData));
+                localStorage.setItem('agenda_autolinks', JSON.stringify(autoLinks));
+            }
+        }
+
+        function clearAutomaticLinks(offKey) {
+            for (let targetKey in autoLinks) {
+                if (autoLinks[targetKey] && autoLinks[targetKey].includes(offKey)) {
+                    delete agendaData[targetKey];
+                    delete autoLinks[targetKey];
+                    manualOverrides[targetKey] = true;
+                }
+            }
+            localStorage.setItem('agenda_conciliacion', JSON.stringify(agendaData));
+            localStorage.setItem('agenda_autolinks', JSON.stringify(autoLinks));
+        }
+
+        function removeAutoGeneratedIfUnused(key) {
+            if (autoLinks[key]) {
+                delete agendaData[key];
+                delete autoLinks[key];
+                localStorage.setItem('agenda_conciliacion', JSON.stringify(agendaData));
+                localStorage.setItem('agenda_autolinks', JSON.stringify(autoLinks));
+            }
+        }
+
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        swipeArea.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        swipeArea.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchEndX < touchStartX - 50) {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            }
+            if (touchEndX > touchStartX + 50) {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            }
+        });
+
+        renderCalendar();
+    </script>
+</body>
+</html>
